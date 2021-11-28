@@ -1,0 +1,25 @@
+{
+  "name": "TranslatedLayout",
+  "description": "A layout field that forces translations to have the same structure.",
+  "type": "kirby-plugin",
+  "license": "MIT",
+  "homepage": "https://github.com/daandelange/kirby3-translatedlayout",
+  "version": "0.1.0-beta",
+  "authors": [
+    {
+      "name": "Daan de Lange",
+      "homepage": "https://daandelange.com/"
+    }
+  ],
+  "keywords": [
+    "kirby3",
+    "kirby3-plugin",
+    "kirby3-field-plugin"
+],
+  "require": {
+    "getkirby/composer-installer": "^1.2"
+  },
+  "extra": {
+    "installer-name": "translatedlayout"
+  }
+}
