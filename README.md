@@ -17,6 +17,9 @@ Note: If you manually edit content files, it's not recommended to use this plugi
 
 ### Requirements
 - Kirby 3.6 or above.
+- **Warning!** If you already have a layout with translated content, switching to this field will erase all translations unless you manually give the same `id` to blocks/rows/columns in the translations.  
+  Please also note that during the beta phase, there remains a risk of data loss. Do not use without backups.
+
 
 ### Download
 Download and copy this repository to `/site/plugins/translatedlayout`.
@@ -53,4 +56,4 @@ However, for usage in commercial projects, please seriously consider to improve 
 
 ## Credits
 
-- [Daan de Lange](https://getkirby.com/plugins/daandelange)
+- [Daan de Lange](https://daandelange.com/)
