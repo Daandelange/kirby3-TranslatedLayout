@@ -40,6 +40,62 @@ composer require daandelange/translatedlayout
 ## Setup
 In your page blueprints, you can simply replace a `type: layout` field by `type: translatedlayout`.
 
+Example setup :
+````yml
+sections:
+  content:
+    type: fields
+    fields:
+      layout:
+        label: TranslatedLayout Demo
+        type: translatedlayout
+        translate: true # <--- enables syncing of translations
+        layouts:
+          - "1/1"
+          - "1/2, 1/2"
+          - "1/3, 1/3, 1/3"
+        fieldsets:
+          translateable:
+            label: Fully Translateable Blocks
+            type: group
+            fieldsets:
+              heading:
+                extends: blocks/heading
+                translate: true # same as default value
+              - list
+              - text
+          partiallytranslateable:
+            label: Blocks with some translateable fields
+            type: group
+            fieldsets:
+              image: # over-rule the translated option of an existing fields
+                label: Image (non translateable src)
+                type: image
+                translate: false
+                fields:
+                  link:
+                    translate: false
+              url: # custom block example
+                name: Url (non-translateable source)
+                icon: cog
+                fields:
+                  link:
+                    type: url
+                    translate: false
+                    required: true
+                  text:
+                    type: text
+                    translate: true
+                  
+          nontranslateable:
+            label: Non-translated blocks
+            type: group
+            fieldsets:
+              line:
+                extends: blocks/line
+                translate: false
+````
+
 ## Options
 There are no options available yet. Would you like to contribute some ?
 

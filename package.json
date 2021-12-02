@@ -1,6 +1,6 @@
 {
   "name": "TranslatedLayout",
-  "version": "0.1.0-beta",
+  "version": "0.1.1-beta",
   "description": "A layout field that forces translations to have the same structure.",
   "main": "index.js",
   "author": "Daan de Lange",
