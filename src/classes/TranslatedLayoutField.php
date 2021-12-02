@@ -151,9 +151,6 @@ class TranslatedLayoutField extends LayoutField {
         $defaultLangValue = $this->valueFromJson($defaultLangTranslation->content()[$this->name()]);
         $defaultLangLayouts = Layouts::factory($defaultLangValue, ['parent' => $this->model])->toArray();
 
-        $dump = true;
-        $dump = false;
-
         // Start sanitizing / Syncing the structure
 
         // Note: the functions used in these functions might throw errors in some rare setups
@@ -161,15 +158,9 @@ class TranslatedLayoutField extends LayoutField {
             $defaultLangLayouts = static::indexesToKeys($defaultLangLayouts);
             $layouts = static::indexesToKeys($layouts);
         } catch(Throwable $e){
-            if($dump) dump('Error somewhere syncing langs : '.$e->getCode().': '.$e->getMessage().' - Line='.$e->getLine().' - File='.$e->getFile());
+            if(false) dump('Error somewhere syncing langs : '.$e->getCode().': '.$e->getMessage().' - Line='.$e->getLine().' - File='.$e->getFile());
             return; // <-- todo, this really should not return as it leaves the translation unsynchronized.
         }
-
-        // Filter out layouts that arent in the default language
-        // $layouts = array_filter($layouts, function($key) use ($defaultLangLayouts){
-        //     //dump("Removing layout ".$key.' !!');
-        //     return array_key_exists($key,$defaultLangLayouts);
-        // }, ARRAY_FILTER_USE_KEY);
 
         // Loop the default language's structure and let translation content replace it
         foreach ($defaultLangLayouts as $layoutIndex => $layout) { // <-- Apply blockstovalues
@@ -182,16 +173,6 @@ class TranslatedLayoutField extends LayoutField {
             }
 
             foreach($layout['columns'] as $columnIndex => $column) {
-                if($dump) dump(' ---newCOLUMN--- '.$columnIndex);
-
-                // Check for entry existing in both langs
-                if( false && !array_key_exists($columnIndex, $layouts[$layoutIndex]['columns']) ){
-                    if($dump) dump('Warning! --> Column index '.$layoutIndex.'/'.$columnIndex.' doesn\'t exist in the current language! (injecting default language value)');
-                    // (Handles automatic default translation for unexisting fields/layouts)
-                    //$layouts[$layoutIndex]['columns'][$columnIndex] = $defaultLangLayouts[$layoutIndex]['columns'][$columnIndex];
-                    // todo: log ?
-                    continue;
-                }
                 
                 // Loop blocks
                 foreach( $defaultLangLayouts[$layoutIndex]['columns'][$columnIndex]['blocks'] as $blockIndex => $block){
@@ -209,12 +190,15 @@ class TranslatedLayoutField extends LayoutField {
                         // Loop blueprint fields here (not defaultLanguage values) to enable translations not in the default lang
                         //foreach($defaultLangLayouts[$layoutIndex]['columns'][$columnIndex]['blocks'][$blockIndex]['content'] as $fieldName => $fieldData){
                         foreach($blockBlueprint->fields() as $fieldName => $fieldOptions){
+                            $translateField = array_key_exists('translate', $fieldOptions) ? ($fieldOptions['translate'] === true) : ($translateByDefault && $blockBlueprint->translate());
                             if(
-                                ($fieldOptions['translate']===true || ($fieldOptions['translate']!==false && ($translateByDefault || $blockBlueprint->translate()))) // Translate field, by default or by block translate options
-                                // todo: maybe ensure the field isn't translated when explicitly set to false ?
+                                // Is the field translateable ?
+                                $translateField
+                                
+                                // Got keys in both contentTranslations ?
                                 && array_key_exists($fieldName, $defaultLangLayouts[$layoutIndex]['columns'][$columnIndex]['blocks'][$blockIndex]['content'])
                                 && array_key_exists($fieldName, $layouts[$layoutIndex]['columns'][$columnIndex]['blocks'][$blockIndex]['content'])
-                                // todo: add empty contidion on translation ?
+                                // todo: add empty condition on translation ?
                             ){
                                 //dump('Got a translation !='.$block['type'].'/'.$fieldName);
                                 
@@ -226,12 +210,6 @@ class TranslatedLayoutField extends LayoutField {
                         // Another way, kirby's way, but needs to ensure that keys of the translation are not set, which requires modifying the values on save ideally, but also sanitization here. (todo)
                         //$defaultLangLayouts[$layoutIndex]['columns'][$columnIndex]['blocks'][$blockIndex]['content'] = array_merge($defaultLangLayouts[$layoutIndex]['columns'][$columnIndex]['blocks'][$blockIndex]['content'], $layouts[$layoutIndex]['columns'][$columnIndex]['blocks'][$blockIndex]['content']);
                         
-                    }
-
-                    if($dump){
-                        $blockType = $layouts[$layoutIndex]['columns'][$columnIndex]['blocks'][$blockIndex]['type'];
-                        $defaultLangBlockType = $defaultLangLayouts[$layoutIndex]['columns'][$columnIndex]['blocks'][$blockIndex]['type'];
-                        dump( $blockType . ' // '. $defaultLangBlockType .' == '. ($blockType==$defaultLangBlockType?'IDENTICAL':'DIFFERENT').' |---| '.$block['content']['text'].' // '.$layouts[$layoutIndex]['columns'][$columnIndex]['blocks'][$blockIndex]['content']['text'] );
                     }
 
                 }
