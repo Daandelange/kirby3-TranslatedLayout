@@ -1,0 +1,91 @@
+
+type: translatedlayout
+#title: Layout
+translate: true
+# Default fieldsets can be found in Kirby/Cms/Fieldsets in the factory() function
+# Individual definitions can be found in kirby/config/blocks/type/type.yml
+# Feel free to copy/paste this default set to your blueprints
+# All translate definitions are filled to ensure over-riding all defaults
+fieldsets:
+  code:
+    extends: blocks/code
+    translate: true
+    fields:
+      code:
+        translate: true
+      language:
+        translate: false
+  gallery:  
+    extends: blocks/gallery
+    translate: false
+    fields:
+     images:
+       translate: false
+  heading:  
+    extends: blocks/heading
+    translate: true
+    fields:
+      level:
+        translate: false
+      text:
+        translate: true
+  image:    
+    extends: blocks/image
+    translate: true
+    fields:
+      location:
+        translate: false
+      image:
+        translate: false
+      src:
+        translate: false
+      alt:
+        translate: true
+      caption:
+        translate: true
+      link:
+        translate: false
+      ratio:
+        translate: false
+      crop:
+        translate: false
+  line:     
+    extends: blocks/line
+    translate: false
+  list:     
+    extends: blocks/list
+    translate: true
+    fields:
+      text:
+        translate: true
+  markdown: 
+    extends: blocks/markdown
+    translate: true
+    fields:
+      text:
+        translate: true
+  quote:    
+    extends: blocks/quote
+    translate: true
+    fields:
+      text:
+        translate: true
+      citation:
+        translate: true
+  text:     
+    extends: blocks/text
+    translate: true
+    fields:
+      text:
+        translate: true
+  video:    
+    extends: blocks/video
+    translate: true
+    fields:
+      text:
+        translate: true
+      url:
+        translate: false
+  table:
+    extends: blocks/table
+    translate: true
