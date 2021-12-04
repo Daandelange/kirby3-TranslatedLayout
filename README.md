@@ -101,16 +101,18 @@ sections:
                 translate: false # Completely disable whole block translations
 ````
 
-To use a predefined translation settings for the default kirby blocks, you may use :
+To use predefined translation settings for the default kirby blocks, you may use :  
 Hint: Useful for quickly setting up this plugin in a test environment.
 
-To setup your own fieldsets, prefer copy/pasting from [translatedlayoutwithfieldsets.yml](https://github.com/Daandelange/kirby3-TranslatedLayout/blob/master/src/blueprints/fields/translatedlayoutwithfieldsets.yml) and adapt it to your needs.
 ````yml
 fields:
   content:
     type: translatedlayout
     extends: fields/translatedlayoutwithfieldsets
 ````
+
+To setup your own fieldsets, prefer copy/pasting from [translatedlayoutwithfieldsets.yml](https://github.com/Daandelange/kirby3-TranslatedLayout/blob/master/src/blueprints/fields/translatedlayoutwithfieldsets.yml) and adapt it to your needs.
+
 
 ## Options
 There are no options available yet. Would you like to contribute some ?
