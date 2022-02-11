@@ -148,7 +148,7 @@ class TranslatedLayoutField extends LayoutField {
         }
 
         // Fetch default lang
-        $defaultLangValue = $this->valueFromJson($defaultLangTranslation->content()[$this->name()]);
+        $defaultLangValue = $this->valueFromJson( $defaultLangTranslation->content()[$this->name()] ?? [] );
         $defaultLangLayouts = Layouts::factory($defaultLangValue, ['parent' => $this->model])->toArray();
 
         // Start sanitizing / Syncing the structure
