@@ -185,7 +185,7 @@ class TranslatedLayoutField extends LayoutField {
                     $translateByDefault = true; // todo: parse this from a plugin option ?
 
                     // Translateable and translation available ?
-                    if(($blockBlueprint->translate() || $translateByDefault) && @array_key_exists($blockIndex, $layouts[$layoutIndex]['columns'][$columnIndex]['blocks'])){
+                    if(($blockBlueprint->translate() || $translateByDefault) && isset($layouts[$layoutIndex]['columns'][$columnIndex]['blocks']) && array_key_exists($blockIndex, $layouts[$layoutIndex]['columns'][$columnIndex]['blocks'])){
 
                         // Loop blueprint fields here (not defaultLanguage values) to enable translations not in the default lang
                         //foreach($defaultLangLayouts[$layoutIndex]['columns'][$columnIndex]['blocks'][$blockIndex]['content'] as $fieldName => $fieldData){
