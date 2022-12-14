@@ -9,5 +9,17 @@
   "scripts": {
     "dev": "kirbyup src/index.js --watch",
     "build": "kirbyup src/index.js"
-  }
+  },
+  "devDependencies": {
+    "kirbyup": "^2.1.1",
+    "esbuild-wasm": "^0.15.16"
+  },
+  "overrides": {
+		"esbuild": "npm:esbuild-wasm@latest"
+	},
+  "pnpm": {
+		"overrides": {
+			"esbuild": "npm:esbuild-wasm@latest"
+		}
+	}
 }
