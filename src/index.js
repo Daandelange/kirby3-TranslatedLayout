@@ -5,9 +5,9 @@ panel.plugin("daandelange/translatedlayout", {
   //components: {},
 
   fields: {
-    translatedLayout: TranslatedLayout,
-    // translatedLayout : {
-    //   //extends: 'k-layout-field', // <-- works fine without extending anything on js side
-    // }
+    translatedlayout: TranslatedLayout,
+    //translatedlayout : {
+    //  extends: 'k-layout-field', // <-- works fine without extending anything on js side
+    //}
   },
 });

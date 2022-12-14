@@ -3,6 +3,7 @@
 // Idea: make blocks syncing optional ? (some block have no translations?)
 
 use \Kirby\Form\Field\LayoutField;
+use \Kirby\Cms\Fieldsets;
 use \Kirby\Cms\Layouts;
 use \Kirby\Exception\LogicException;
 
@@ -25,6 +26,16 @@ class TranslatedLayoutField extends LayoutField {
     public function extends(){
         return 'layout';
     }
+
+    /**
+	 * Returns the field type
+	 *
+	 * @return string
+	 */
+	public function type(): string {
+        // Needs uppercase, see FieldClass.php::type() --> classname is automatically converted from class otherwise, which grabs the wrong component in the panel
+		return 'translatedlayout';
+	}
 
     // Replaces numbered indexes by a string from item[$key].
     public static function indexesToKeys(array $array, string $key='id'): array {
@@ -235,6 +246,37 @@ class TranslatedLayoutField extends LayoutField {
 
         // Remember value
         $this->value = $defaultLangLayouts;
+    }
+
+    // Try to override fieldsets. Fieldsets define block blueprints, which allow controlling their translation status.
+    protected function setFieldsets($fieldsets, $model){
+        // On default lang, use native kirby function, sure not to break.
+        if($this->kirby()->language()->isDefault()) return parent::setFieldsets($fieldsets, $model);// added this line compared to native
+
+		if (is_string($fieldsets) === true) {
+			$fieldsets = [];
+		}
+
+        $fieldsets = $this->adaptFieldsetsToTranslation($fieldsets);// added this line compared to native
+
+		$this->fieldsets = Fieldsets::factory($fieldsets, [
+			'parent' => $model
+		]);
+	}
+
+    // Adds translation statuses to all fields and modifies them according to blueprint.
+    private function adaptFieldsetsToTranslation(array $fieldsets){
+        foreach($fieldsets as $key => $fieldset){
+            // Set translations ?
+            // Already set via blueprint YML ? if using: "extends: translatedlayoutwithfields" ? Ensure to set defaults ?
+
+            // Set disabed ? Saveable ? if translate is false. So the field is disabled for editing in panel
+            if(isset($fieldset['translate']) && $fieldset['translate'] === false ){
+                $fieldset['disabled']=true;
+                //$fieldset['saveable']=false; // Assumes the field has no value ! Not possible
+            }
+        }
+        return $fieldsets;
     }
 
     // Try to override these ModelWithContent methods
