@@ -10,6 +10,18 @@ use \Kirby\Exception\LogicException;
 //use \Kirby\Cms\ModelWithContent;
 //require_once( __DIR__ . '/TranslatedLayoutFieldContent.php');
 
+// Todo:
+// - Add options to configure the behaviour of the field :
+//      - Provide a toLayouts() with and without sanitation ? (optimizes: prevent loading default lang in translations by trusting the translation content file )
+//      - Provide an option not to save non-translateable duplicate content in the content file.
+//      - 
+// - Facilitate blueprint setup by providing a way to automatically inject `translate: true|false` to blocks and their fieldset fields.
+// - Port the layouts logic to columns and blocks.
+// - Miscellaneous improvements :
+//      - Double check error handling behaviour
+//      - Performance checks
+//      - Test suite
+
 // Class for extending the default layout field to have translateable content with layout structure sync
 class TranslatedLayoutField extends LayoutField {
     

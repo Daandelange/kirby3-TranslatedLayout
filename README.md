@@ -2,29 +2,29 @@
 
 A layout field that forces translations to have an identical structure to the one of the default language.
 
-This is an experimental draft for trying to bring some translation logic to blocks and layouts.
+### Beta
+This is an experimental draft for trying to bring some translation logic to blocks, columns and layouts.  
+It turns out to be quite powerful already with just a minimal set of changes compared to the native field behaviour.
+Before moving on to more configuration options, I'd like to ensure the base code is robust. If you encounter any bug, please fill an issue.
 
-Note: If you'd like to manually edit a `translatedlayout` field in any content file, it's not recommended to use this plugin.
-Note: Blocks are not yet available while testing the layouts. They should be easy to port.
 
 ### Implementation
  - *Seconday language* translations of this field are always syncronized (on parse aka `$field->fill($value)`) with layouts and blocks from the default language using their unique `id`.
-    - If a block has no translation, it's replaced with the default language.
-    - If a block translation is not available in the default language, it's removed.
-    - Some simple GUI limitations prevent panel users from changing the layout and/or adding blocks.
-    - The syncronized translation is saved as a regular layout in the content file.  
-      This duplicates the structure in every language, but it facilitates this plugin's implementation and ensures full compatibility with core blocks and layouts.
- - The **primary language** inherits the default LayoutBlock behaviour and remains (almost) identical.
+    - **Fallback** : If a block has no translation, it's replaced with the default language.
+    - **Sanitation** : If a block translation is not available in the default language, it's removed. All blocks from the default language are guaranteed to be available in translations.
+    - **Panel GUI** : Non-translateable fields and blocks are disabled, preventing panel users from changing the layout and adding blocks in translations.
+    - **Parse** : The syncronized translation is saved as a regular layout in the content file and works fine with the native `$field->toLayout()`.
+ - The **primary language** inherits the default LayoutField behaviour and remains (almost?) identical to the native Kirby Layout field.
 
 ![Screenshot of Kirby 3 plugins TranslatedLayout](TranslatedLayout.gif)
 
 ## Installation
 
 ### Requirements
-- Kirby 3.6 or above.
+- Kirby 3.8 or above.
 - **Warning!** If you already have a layout with translated content, switching to this field will erase all translations unless you manually give the same `id` to blocks/rows/columns in the translations.  
   Please also note that during the beta phase, **there remains a risk of data loss**. Do not use without backups.
-
+- **Note**: If you'd like to manually edit a `translatedlayout` field via the content file, it's not recommended to use this plugin, as it's probably not recommended to use blocks without the panel.  
 
 ### Download
 Download and copy this repository to `/site/plugins/translatedlayout`.
@@ -102,7 +102,6 @@ sections:
 ````
 
 To use predefined translation settings for the default kirby blocks, you may use :  
-Hint: Useful for quickly setting up this plugin in a test environment.
 
 ````yml
 fields:
@@ -110,9 +109,10 @@ fields:
     type: translatedlayout
     extends: fields/translatedlayoutwithfieldsets
 ````
+This can be useful for quickly setting up this plugin in a test environment.  
+*Beware that this will add the fields to your fieldsets if they don't exist yet.*  
 
 To setup your own fieldsets, prefer copy/pasting from [translatedlayoutwithfieldsets.yml](https://github.com/Daandelange/kirby3-TranslatedLayout/blob/master/src/blueprints/fields/translatedlayoutwithfieldsets.yml) and adapt it to your needs.
-
 
 ## Options
 There are no options available yet. Would you like to contribute some ?
@@ -126,7 +126,8 @@ There are no options available yet. Would you like to contribute some ?
 
 MIT - Free to use, free to improve !
 
-However, for usage in commercial projects, please seriously consider to improve the plugin a little and contribute back the changes with a PR, or hire someone to do so.
+However, for usage in commercial projects, please seriously consider to improve the plugin a little and contribute back the changes with a PR, or hire someone to do so.  
+For contribution suggestions, you can search for `todo` in the source code or refer to open issues.
 
 ## Credits
 
