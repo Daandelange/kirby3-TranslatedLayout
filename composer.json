@@ -1,10 +1,10 @@
 {
   "name": "TranslatedLayout",
-  "description": "A layout field that forces translations to have the same structure.",
+  "description": "A layout field with embedded translation logic.",
   "type": "kirby-plugin",
   "license": "MIT",
   "homepage": "https://github.com/daandelange/kirby3-translatedlayout",
-  "version": "0.1.2-beta",
+  "version": "0.2.1-beta",
   "authors": [
     {
       "name": "Daan de Lange",

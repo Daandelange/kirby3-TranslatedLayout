@@ -1,7 +1,7 @@
 {
   "name": "TranslatedLayout",
-  "version": "0.2.0-beta",
-  "description": "A layout field with translation logic.",
+  "version": "0.2.1-beta",
+  "description": "A layout field with embedded translation logic.",
   "main": "index.js",
   "author": "Daan de Lange",
   "license": "MIT",
