@@ -43,6 +43,8 @@ composer require daandelange/translatedlayout
 -->
 
 ## Setup
+
+### Blueprints
 In your page blueprints, you can simply replace a `type: layout` field by `type: translatedlayout`.
 
 Example setup :
@@ -99,6 +101,15 @@ sections:
               line:
                 extends: blocks/line
                 translate: false # Completely disable whole block translations
+        settings: # You can also translate layout settings
+          fields:
+            class:
+              type: text
+              width: 1/2
+              translate: false  # Don't translate
+            purpose:
+              type: text
+              translate: true  # Translate
 ````
 
 To use predefined translation settings for the default kirby blocks, you may use :  
@@ -113,6 +124,9 @@ This can be useful for quickly setting up this plugin in a test environment.
 *Beware that this will add the fields to your fieldsets if they don't exist yet.*  
 
 To setup your own fieldsets, prefer copy/pasting from [translatedlayoutwithfieldsets.yml](https://github.com/Daandelange/kirby3-TranslatedLayout/blob/master/src/blueprints/fields/translatedlayoutwithfieldsets.yml) and adapt it to your needs.
+
+### Templates
+As for the native `LayoutField` and `BlocksField`, use : `$field->toLayout()`, `$field->toBlocks()`, etc.
 
 ## Options
 There are no options available yet. Would you like to contribute some ?

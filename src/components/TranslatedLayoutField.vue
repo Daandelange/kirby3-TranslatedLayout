@@ -1,4 +1,5 @@
 <template>
+  <!-- Changes : Class items -->
   <k-field
     v-bind="$props"
     :class="{
@@ -7,21 +8,30 @@
       'layouts-disabled': layoutEditingIsDisabled
     }"
   >
-    <k-block-layouts
+    <!-- Changes : element name changes, disabled attr -->
+    <k-translated-block-layouts
       v-bind="$props"
       @input="$emit('input', $event)"
-      :disabled="layoutEditingIsDisabled"
     />
   </k-field>
 </template>
 
 <script>
+// This component is a duplicate of components/layouter/Layouts.vue (changes are commented in the template, in case it breaks).
+// Purpose: Disable some editing functions but not all, as it is the case with props.disabled
+
 // Notes:
-// - Blockfield.disabled -> disables layout sidebar but still maintains blocks editable
+// - BlockLayouts.disabled -> disables layout sidebar but still maintains blocks editable, but no layout settings if they need translations
 // - KLayout.disabled -> disables a single row
+// - So we need to replace 3 templates just to introduce a new prop, and keep them up to date
+
+import TranslatedBlockLayouts from "~/components/TranslatedLayouterLayouts.vue"
+
 export default {
-  //extends: 'layout',
   extends: 'k-layout-field',
+  components: {
+    'k-translated-block-layouts' : TranslatedBlockLayouts,
+  },
   computed: {
     // Editing is only allowed in the default language
     layoutEditingIsDisabled() {

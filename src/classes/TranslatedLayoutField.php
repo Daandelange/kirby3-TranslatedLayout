@@ -3,6 +3,8 @@
 // Idea: make blocks syncing optional ? (some block have no translations?)
 
 use \Kirby\Form\Field\LayoutField;
+use \Kirby\Cms\Blueprint;
+use \Kirby\Cms\Fieldset;
 use \Kirby\Cms\Fieldsets;
 use \Kirby\Cms\Layouts;
 use \Kirby\Exception\LogicException;
@@ -125,7 +127,7 @@ class TranslatedLayoutField extends LayoutField {
     // Note : Save passes an array while loadFromContent passes a yaml string.
     public function fill($value = null){
 
-        //Handle return early
+        // Default lang uses native kirby code, which is faster. :)
         if(
             // Single lang has normal behaviour
             ( $this->kirby()->multilang() === false ) ||
@@ -156,9 +158,6 @@ class TranslatedLayoutField extends LayoutField {
         //$this->value = $layouts;
         // <!-- end original code --->
 
-        // Call parent function
-        //parent::fill($value);
-
         // Fetch translation
         $value   = $this->valueFromJson($value); // Ensures the value is an array
         $layouts = Layouts::factory($value, ['parent' => $this->model])->toArray();
@@ -177,24 +176,45 @@ class TranslatedLayoutField extends LayoutField {
         $defaultLangLayouts = Layouts::factory($defaultLangValue, ['parent' => $this->model])->toArray();
 
         // Start sanitizing / Syncing the structure
-        
         // Note: the functions used in these functions might throw errors in some rare setups
         try{
             $defaultLangLayouts = static::indexesToKeys($defaultLangLayouts);
             $layouts = static::indexesToKeys($layouts);
         } catch(Throwable $e){
-            if(false) dump('Error somewhere syncing langs : '.$e->getCode().': '.$e->getMessage().' - Line='.$e->getLine().' - File='.$e->getFile()); die();
+            //if(false) dump('Error somewhere syncing langs : '.$e->getCode().': '.$e->getMessage().' - Line='.$e->getLine().' - File='.$e->getFile()); die();
             return; // <-- todo, this really should not return as it leaves the translation unsynchronized.
         }
 
         // Loop the default language's structure and let translation content replace it
         foreach ($defaultLangLayouts as $layoutIndex => $layout) { // <-- Apply blockstovalues
 
-            // Simplified from parent::fill(), not sure if useful, and if so, might need a translation
-            // for now, keep behaviour from default language
-            if ($this->settings !== null) { // note: original condition... might need attention ?
-                // Sanitize attrs form
-                $defaultLangLayouts[$layoutIndex]['attrs'] = $this->attrsForm($layout['attrs'])->values();
+            // Check the layout settings / attrs
+            if ($this->settings !== null) { // 
+                // Generate the corresponding form
+                $attrForm = $this->attrsForm($layout['attrs']);
+
+                // Load value from default lang
+                $defaultLangLayouts[$layoutIndex]['attrs'] = $attrForm->values();
+
+                // Check for translations
+                $attrFields = $attrForm->fields();
+                if( $attrFields->count() > 0 && isset($layouts[$layoutIndex]) && array_key_exists('attrs', $layouts[$layoutIndex]) ){
+                    $translatedAttrs = $this->attrsForm($layouts[$layoutIndex]['attrs'])->values();
+                    // Loop default attrs by field
+                    foreach($attrFields as $fieldName => $attrField){
+                        // Translate if needed
+                        if(
+                            $attrField->translate() === true // the field translates
+                            && isset($layouts[$layoutIndex]['attrs'][$fieldName]) // The translation exists
+                        ){
+                            $defaultLangLayouts[$layoutIndex]['attrs'][$fieldName] = $layouts[$layoutIndex]['attrs'][$fieldName];
+                            // Todo : What if translation is empty ?
+                            // !V::empty($layouts[$layoutIndex]['attrs'][$attrIndex])
+
+                            // Todo: also handle nested fields translation ?
+                        }
+                    }
+                }
             }
 
             foreach($layout['columns'] as $columnIndex => $column) {
@@ -234,6 +254,8 @@ class TranslatedLayoutField extends LayoutField {
 
                             }
                             // Todo : Handle nested fields in a field ? ? ? (structure, etc...)
+
+                            // Todo: the fields loop can be heavy to loop, maybe unset the field once used, to speed up the next iterations ?
                         }
                         // Alternative way, kirby's way, but needs to ensure that keys of the translation are not set, which requires modifying the values on save ideally, but also sanitization here. (todo)
                         //$defaultLangLayouts[$layoutIndex]['columns'][$columnIndex]['blocks'][$blockIndex]['content'] = array_merge($defaultLangLayouts[$layoutIndex]['columns'][$columnIndex]['blocks'][$blockIndex]['content'], $layouts[$layoutIndex]['columns'][$columnIndex]['blocks'][$blockIndex]['content']);
@@ -260,8 +282,8 @@ class TranslatedLayoutField extends LayoutField {
         $this->value = $defaultLangLayouts;
     }
 
-    // Try to override fieldsets. Fieldsets define block blueprints, which allow controlling their translation status.
-    protected function setFieldsets($fieldsets, $model){
+    // Override fieldsets for translations. Fieldsets define block blueprints, which allow controlling their translation status.
+    protected function setFieldsets($fieldsets, $model) {
         // On default lang, use native kirby function, sure not to break.
         if($this->kirby()->language()->isDefault()) return parent::setFieldsets($fieldsets, $model);// added this line compared to native
 
@@ -276,19 +298,48 @@ class TranslatedLayoutField extends LayoutField {
 		]);
 	}
 
-    // Adds translation statuses to all fields and modifies them according to blueprint.
-    private function adaptFieldsetsToTranslation(array $fieldsets){
-        foreach($fieldsets as $key => $fieldset){
-            // Set translations ?
-            // Already set via blueprint YML ? if using: "extends: translatedlayoutwithfields" ? Ensure to set defaults ?
+    // Override the layout settings blueprint, 
+    protected function setSettings($settings = null) {
+        // On default lang, use native kirby function, sure not to break.
+        if($this->kirby()->language()->isDefault()) return parent::setSettings($settings);// added this line compared to native
 
-            // Set disabed ? Saveable ? if translate is false. So the field is disabled for editing in panel
-            if(isset($fieldset['translate']) && $fieldset['translate'] === false ){
-                $fieldset['disabled']=true;
-                //$fieldset['saveable']=false; // Assumes the field has no value ! Not possible
-            }
+		if (empty($settings) === true) {
+			$this->settings = null;
+			return;
+		}
+
+		$settings = Blueprint::extend($settings);
+		$settings['icon']   = 'dashboard';
+		$settings['type']   = 'layout';
+		$settings['parent'] = $this->model();
+
+        // Lines below were added compared to native function
+        $settings = $this->adaptFieldsetToTranslation($settings);
+        //$settings['disabled'] = true;
+        //$settings['editable'] = false; // Adding this line disables saving of attrs/settings ?
+
+		$this->settings = Fieldset::factory($settings);
+	}
+
+    // Adds translation statuses to all fields and modifies them according to blueprint.
+    private static function adaptFieldsetsToTranslation(array $fieldsets) : array {
+        foreach($fieldsets as $key => $fieldset){
+            $fieldsets[$key] = static::adaptFieldsetToTranslation($fieldset);
         }
         return $fieldsets;
+    }
+
+    private static function adaptFieldsetToTranslation(array $fieldset) : array {
+        // Set translations ?
+        // Already set via blueprint YML ? if using: "extends: translatedlayoutwithfields" ? Ensure to set defaults ?
+
+        // Set disabed ? Saveable ? if translate is false. So the field is disabled for editing in panel
+        if(isset($fieldset['translate']) && $fieldset['translate'] === false ){
+            $fieldset['disabled']=true;
+            //$fieldset['saveable']=false; // Assumes the field has no value ! Not possible
+        }
+
+        return $fieldset;
     }
 
     // Try to override these ModelWithContent methods
