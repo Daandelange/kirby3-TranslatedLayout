@@ -52,19 +52,19 @@ class TranslatedLayoutField extends LayoutField {
         return $ret;
     }
 
-    // Replaces named keys to numbered indexes. Also syncs back the (previously) named key to item['$key] if it's different.
+    // Replaces named keys to numbered indexes.
     public static function keysToIndexes(array $array, string $key='id'): array {
-        
+
         foreach ($array as $layoutKey => $layoutValue) {
-            $array[$layoutKey][$key]=$layoutKey; // Sync key with id
+            //$array[$layoutKey][$key]=$layoutKey; // Sync key with id
             if(array_key_exists('columns', $array[$layoutKey])){
                 foreach ($array[$layoutKey]['columns'] as $columnKey => $columnValue) {
-                    $array[$layoutKey]['columns'][$columnKey][$key]=$columnKey; // Sync key with id
+                    //$array[$layoutKey]['columns'][$columnKey][$key]=$columnKey; // Sync key with id
                     if(array_key_exists('blocks', $array[$layoutKey]['columns'][$columnKey])){
                         foreach ($array[$layoutKey]['columns'][$columnKey]['blocks'] as $blockKey => $blockValue) {
-                            $array[$layoutKey]['columns'][$columnKey]['blocks'][$blockKey][$key]=$blockKey; // Sync key with id
+                            //$array[$layoutKey]['columns'][$columnKey]['blocks'][$blockKey][$key]=$blockKey; // Sync key with id
                         }
-                        $array[$layoutKey]['columns'][$columnKey]['blocks'] = array_values($array[$layoutKey]['columns'][$columnKey]['blocks']); // remove columns keys
+                        $array[$layoutKey]['columns'][$columnKey]['blocks'] = array_values($array[$layoutKey]['columns'][$columnKey]['blocks']); // remove blocks keys
                     }
                 }
                 $array[$layoutKey]['columns'] = array_values($array[$layoutKey]['columns']); // remove columns keys
@@ -192,22 +192,25 @@ class TranslatedLayoutField extends LayoutField {
                         // Loop blueprint fields here (not defaultLanguage values) to enable translations not in the default lang
                         //foreach($defaultLangLayouts[$layoutIndex]['columns'][$columnIndex]['blocks'][$blockIndex]['content'] as $fieldName => $fieldData){
                         foreach($blockBlueprint->fields() as $fieldName => $fieldOptions){
+                            // Translate if field's translation is explicitly set or if the block is set to translate
                             $translateField = array_key_exists('translate', $fieldOptions) ? ($fieldOptions['translate'] === true) : ($translateByDefault && $blockBlueprint->translate());
                             if(
                                 // Is the field translateable ?
                                 $translateField
-                                
+
                                 // Got keys in both contentTranslations ?
                                 && array_key_exists($fieldName, $defaultLangLayouts[$layoutIndex]['columns'][$columnIndex]['blocks'][$blockIndex]['content'])
-                                && array_key_exists($fieldName, $layouts[$layoutIndex]['columns'][$columnIndex]['blocks'][$blockIndex]['content'])
-                                // todo: add empty condition on translation ?
+                                && array_key_exists($fieldName,            $layouts[$layoutIndex]['columns'][$columnIndex]['blocks'][$blockIndex]['content'])
+                                // todo: add empty condition on translation ? This brobably should take a blueprint option if translateing empty values. Leaving translations empty can also be useful
+                                //&& !V::empty($layouts[$layoutIndex]['columns'][$columnIndex]['blocks'][$blockIndex]['content'])
                             ){
                                 //dump('Got a translation !='.$block['type'].'/'.$fieldName);
                                 
-                                // One way to sync translations
+                                // Replace the default lang block content with the translated one.
                                 $defaultLangLayouts[$layoutIndex]['columns'][$columnIndex]['blocks'][$blockIndex]['content'][$fieldName]=$layouts[$layoutIndex]['columns'][$columnIndex]['blocks'][$blockIndex]['content'][$fieldName];
 
                             }
+                            // Todo : Handle nested fields in a field ? ? ? (structure, etc...)
                         }
                         // Alternative way, kirby's way, but needs to ensure that keys of the translation are not set, which requires modifying the values on save ideally, but also sanitization here. (todo)
                         //$defaultLangLayouts[$layoutIndex]['columns'][$columnIndex]['blocks'][$blockIndex]['content'] = array_merge($defaultLangLayouts[$layoutIndex]['columns'][$columnIndex]['blocks'][$blockIndex]['content'], $layouts[$layoutIndex]['columns'][$columnIndex]['blocks'][$blockIndex]['content']);
