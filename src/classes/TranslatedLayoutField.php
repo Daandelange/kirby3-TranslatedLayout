@@ -11,18 +11,19 @@ use \Kirby\Exception\LogicException;
 
 // Class for extending the default layout field to have translateable content with layout structure sync
 class TranslatedLayoutField extends LayoutField {
-    // 'extends' => 'layout', // Build upon blocks
+    
 
     public function __construct(array $params = []){
-
         parent::__construct($params);
 
         // Invert default translate value ?
         //$this->setTranslate(false);//$params['translate'] ?? false);
     }
 
+    // Extend layout mixin
+    // 'extends' => 'layout', // No works...
     public function extends(){
-        return 'layout'; // Extend layout mixin
+        return 'layout';
     }
 
     // Replaces numbered indexes by a string from item[$key].
@@ -72,9 +73,9 @@ class TranslatedLayoutField extends LayoutField {
         $array = array_values($array); // remove keys on level 1
         return $array;
     }
-    
+
     // public function store($value){ // Returns the value to store
-        
+
     //     $value = Layouts::factory($value, ['parent' => $this->model])->toArray();
     //     //dump($value);
     //     //dump($this->layouts);die();
@@ -97,7 +98,8 @@ class TranslatedLayoutField extends LayoutField {
     //     return $this->valueToJson($value, $this->pretty());
     // }
 
-    // Populates the php object with values (used in construct, sve, display, etc) // opposite of store() ? (also used before store  to recall js values)
+    // Populates the php object with values (used in construct, save, display, etc) // opposite of store() ? (also used before store  to recall js values)
+    // Note : Save passes an array while loadFromContent passes a yaml string.
     public function fill($value = null){
 
         //Handle return early
@@ -111,7 +113,7 @@ class TranslatedLayoutField extends LayoutField {
         ){
             return parent::fill($value);
         }
-
+        
         // <!-- begin original code (with comments added) ---
         // String to array
         // $value   = $this->valueFromJson($value); // <-- parses json
@@ -135,13 +137,13 @@ class TranslatedLayoutField extends LayoutField {
         //parent::fill($value);
 
         // Fetch translation
-        $value   = $this->valueFromJson($value);
+        $value   = $this->valueFromJson($value); // Ensures the value is an array
         $layouts = Layouts::factory($value, ['parent' => $this->model])->toArray();
 
         // Check default lang for this model (should always exist anyways)
         $defaultLang = $this->kirby()->defaultLanguage()->code();
-        $currentLang = $this->model()->translation()->code();//$this->kirby()->language()->code();
-        
+        $currentLang = $this->kirby()->language()->code();// $this->model()->translation()->code();// commented is more correct, but loads translation strings = useless here
+
         $defaultLangTranslation = $this->model()->translation($defaultLang);
         if( !$defaultLangTranslation || !$defaultLangTranslation->exists() ){
             throw new LogicException('Multilanguage is enabled but there is no content for the default language... who\'s the wizzard ?!');
@@ -152,13 +154,13 @@ class TranslatedLayoutField extends LayoutField {
         $defaultLangLayouts = Layouts::factory($defaultLangValue, ['parent' => $this->model])->toArray();
 
         // Start sanitizing / Syncing the structure
-
+        
         // Note: the functions used in these functions might throw errors in some rare setups
-        try{            
+        try{
             $defaultLangLayouts = static::indexesToKeys($defaultLangLayouts);
             $layouts = static::indexesToKeys($layouts);
         } catch(Throwable $e){
-            if(false) dump('Error somewhere syncing langs : '.$e->getCode().': '.$e->getMessage().' - Line='.$e->getLine().' - File='.$e->getFile());
+            if(false) dump('Error somewhere syncing langs : '.$e->getCode().': '.$e->getMessage().' - Line='.$e->getLine().' - File='.$e->getFile()); die();
             return; // <-- todo, this really should not return as it leaves the translation unsynchronized.
         }
 
@@ -167,15 +169,15 @@ class TranslatedLayoutField extends LayoutField {
 
             // Simplified from parent::fill(), not sure if useful, and if so, might need a translation
             // for now, keep behaviour from default language
-            if ($this->settings !== null) { // note: original condition... might needs attention ?
+            if ($this->settings !== null) { // note: original condition... might need attention ?
                 // Sanitize attrs form
                 $defaultLangLayouts[$layoutIndex]['attrs'] = $this->attrsForm($layout['attrs'])->values();
             }
 
             foreach($layout['columns'] as $columnIndex => $column) {
-                
-                // Loop blocks
-                foreach( $defaultLangLayouts[$layoutIndex]['columns'][$columnIndex]['blocks'] as $blockIndex => $block){
+
+                // Loop blocks and restrict them to the default language
+                foreach( $column['blocks'] as $blockIndex => $block){
 
                     // Note: If code breaks: Useful inspiration for syncing translations --> ModelWithContent.php [in function content()] :
 
@@ -207,28 +209,29 @@ class TranslatedLayoutField extends LayoutField {
 
                             }
                         }
-                        // Another way, kirby's way, but needs to ensure that keys of the translation are not set, which requires modifying the values on save ideally, but also sanitization here. (todo)
+                        // Alternative way, kirby's way, but needs to ensure that keys of the translation are not set, which requires modifying the values on save ideally, but also sanitization here. (todo)
                         //$defaultLangLayouts[$layoutIndex]['columns'][$columnIndex]['blocks'][$blockIndex]['content'] = array_merge($defaultLangLayouts[$layoutIndex]['columns'][$columnIndex]['blocks'][$blockIndex]['content'], $layouts[$layoutIndex]['columns'][$columnIndex]['blocks'][$blockIndex]['content']);
-                        
+
+                        // Fallback when a block has no fields ? Are there blocks with content AND without fields ?
                     }
 
                 }
 
-                // Compute simplified blueprint to fully expanded options
+                // Compute simplified blueprint to fully expanded options (like original Kirby fill() function)
                 //$defaultLangLayouts[$layoutIndex]['columns'][$columnIndex]['blocks'] = $this->blocksToValues(array_merge($defaultLangLayouts[$layoutIndex]['columns'][$columnIndex]['blocks'], $layouts[$layoutIndex]['columns'][$columnIndex]['blocks']));
                 $defaultLangLayouts[$layoutIndex]['columns'][$columnIndex]['blocks'] = $this->blocksToValues($defaultLangLayouts[$layoutIndex]['columns'][$columnIndex]['blocks']);
 
-                // lazy-update/replace ? whole blocks part ? Too buggy in case items get add/removed; only works well when data is a perfect mirror
-                //$layouts[$layoutIndex]['columns'][$columnIndex]['blocks'] = array_combine($defaultLangLayouts[$layoutIndex]['columns'][$columnIndex]['blocks'], array_slice($layouts[$layoutIndex]['columns'][$columnIndex]['blocks']); 
+                // lazy-update/replace ? whole blocks part ? Too buggy in case items get add/removed; only works well when data is a perfect mirror. Also, array_combine tends to be quite slow.
+                //$layouts[$layoutIndex]['columns'][$columnIndex]['blocks'] = array_combine($defaultLangLayouts[$layoutIndex]['columns'][$columnIndex]['blocks'], array_slice($layouts[$layoutIndex]['columns'][$columnIndex]['blocks']);
             }
-            
+
         }
 
         // Reset keys
         $defaultLangLayouts = static::keysToIndexes($defaultLangLayouts);
 
         // Remember value
-        $this->value = $defaultLangLayouts;   
+        $this->value = $defaultLangLayouts;
     }
 
     // Try to override these ModelWithContent methods

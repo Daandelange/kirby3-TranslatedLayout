@@ -10,7 +10,7 @@ Kirby::plugin('daandelange/translatedlayout', [
         'translatedlayout' => 'TranslatedLayoutField',
     ],
     'blueprints' => [
-        
+
         'fields/translatedlayoutwithfieldsetsbis' => __DIR__ . '/src/blueprints/fields/translatedlayoutwithfieldsets.yml',
         'fields/translatedlayoutwithfieldsets' => function ($kirby) {
             // Put all static definitions in an yml file so it's easier to copy/paste/write.
@@ -20,6 +20,8 @@ Kirby::plugin('daandelange/translatedlayout', [
             $blockBlueprints = $kirby->blueprints('blocks');
 
             return array_merge(
+
+                // Load static properties from file
                 Data::read( __DIR__ . '/src/blueprints/fields/translatedlayoutwithfieldsets.yml' ),
 
                 // Dynamically inject non-default blocks depending on installed addons
@@ -65,7 +67,7 @@ Kirby::plugin('daandelange/translatedlayout', [
                             ],
                         ],
                     ]
-                ] : [])    
+                ] : [])
             );
         }
     ],
