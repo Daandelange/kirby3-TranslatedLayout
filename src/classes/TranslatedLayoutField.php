@@ -99,32 +99,46 @@ class TranslatedLayoutField extends LayoutField {
         return $array;
     }
 
-    // public function store($value){ // Returns the value to store
+    public function store($value){ // Returns the (array) value to store (string). The value has been fill()ed already.
+        return parent::store($value);
+    }
 
-    //     $value = Layouts::factory($value, ['parent' => $this->model])->toArray();
-    //     //dump($value);
-    //     //dump($this->layouts);die();
-    //     // returns empty string to avoid storing empty array as string `[]`
-    //     // and to consistency work with `$field->isEmpty()`
-    //     if (empty($value) === true) {
-    //         return '';
-    //     }
+    // Flattens a layout. All blocks, columns and layouts are in their own array. 
+    private static function flattenLayoutsColumnsBlocks( Kirby\Cms\Layouts $layouts/*, array $columns = ['layouts','columns','blocks']*/ ) : array {
+        $flatStructure = ['layouts'=>[],/*'columns'=>[],*/'blocks'=>[]];
+        if( !$layouts->isEmpty() ){
+            foreach ($layouts->toArray() as $layoutIndex => $layout) {
+                // We should have: $layout.id , $layout.columns , $layout.attrs
+                if( isset($layout['columns']) ){
+                    foreach($layout['columns'] as $columnIndex => $column) {
+                        // We should have: $column.id , $column.blocks , $column.width
+                        if( isset($column['blocks']) ){
+                            foreach( $column['blocks'] as $blockIndex => $block){
+                                // We should have: $block.id , $block.content , $block.type, $block.isHidden
+                                $keyB = $block['id']??$blockIndex;
+                                if(isset($flatStructure['blocks'][$keyB]))
+                                    throw new LogicException("Ouch, now unique IDs can exist twice ! I can't handle this.");
+                                
+                                $flatStructure['blocks'][$keyB] = $block;
+                            }
+                            unset($column['blocks']);
+                        }
+                        // $keyC = $column['id']??$columnIndex;
+                        // $flatStructure['columns'][$keyC] = $column;
+                    }
+                    unset($layout['columns']);
+                }
+                $keyL = $layout['id']??$layoutIndex;
+                if(isset($flatStructure['blocks'][$keyL]))
+                    throw new LogicException("Ouch, now unique IDs can exist twice ! I can't handle this.");
+                $flatStructure['layouts'][$keyL] = $layout; // Note: Attrs are simply copied within
+            }
+        }
+        return $flatStructure;
+    }
 
-    //     foreach ($value as $layoutIndex => $layout) {
-    //         if ($this->settings !== null) {
-    //             $value[$layoutIndex]['attrs'] = $this->attrsForm($layout['attrs'])->content();
-    //         }
-
-    //         foreach ($layout['columns'] as $columnIndex => $column) {
-    //             $value[$layoutIndex]['columns'][$columnIndex]['blocks'] = $this->blocksToValues($column['blocks'] ?? [], 'content');
-    //         }
-    //     }
-
-    //     return $this->valueToJson($value, $this->pretty());
-    // }
-
-    // Populates the php object with values (used in construct, save, display, etc) // opposite of store() ? (also used before store  to recall js values)
-    // Note : Save passes an array while loadFromContent passes a yaml string.
+    // Value setter (used in construct, save, display, etc) // opposite of store() ? (also used before store  to recall js values)
+    // Note : Panel.page.save passes an array while loadFromContent passes a yaml string.
     public function fill($value = null){
 
         // Default lang uses native kirby code, which is faster. :)
@@ -159,8 +173,39 @@ class TranslatedLayoutField extends LayoutField {
         // <!-- end original code --->
 
         // Fetch translation
-        $value   = $this->valueFromJson($value); // Ensures the value is an array
-        $layouts = Layouts::factory($value, ['parent' => $this->model])->toArray();
+
+        // OPTION A : We got an array, the panels sends us a full layout that we have to parse, probably for saveing it
+        if( is_array($value) ){
+            
+            // Secure
+            if( !empty($value) && ( !isset($value[0]) || !isset($value[0]['columns']) || !isset($value[0]['id']) ) ){
+                // Todo: on save, the value become null when throwing, which sets the stored value to null. The panel doesn't notify anything.
+                // Maybe: Rather die and respond with a panel error if  Or is there a way to handle this response natively ?
+                throw new LogicException('The layout field received an unfamiliar array format, throwing to ensure everything is OK.');
+            }
+
+            // Keep flattened
+            $value = $this->flattenLayoutsColumnsBlocks( Layouts::factory($value, ['parent' => $this->model]) );
+        }
+        // OPTION B : We got a string, the value comes from the content file which only stores the translations
+        elseif( is_string($value) ){
+            // Parse to array
+            $value = $this->valueFromJson($value); // Ensures the value is an array
+
+            // Convert from native translation storage format (copy-pasted or saved in pre v0.3.0 : data was stored like default lang, with the layouts and all)
+            if( isset($value[0]) && isset($value[0]['columns']) && isset($value[0]['id']) ){ // Value is same as when getting a panel save
+                $value = $this->flattenLayoutsColumnsBlocks( Layouts::factory($value, ['parent' => $this->model]) );
+            }
+            // Check values ?
+            if( !isset($value['layouts']) || !isset($value['blocks']) )
+                throw new LogicException('The parsed string data looks wrong. Aborting.');
+        }
+        // OPTION C : Huh? Is there an option C ?!
+        else {
+            throw new LogicException('Could not parse the layout value !');
+        }
+
+        // Todo : after some testing, the logic exceptions above and below could return the default language, just in case...
 
         // Check default lang for this model (should always exist anyways)
         $defaultLang = $this->kirby()->defaultLanguage()->code();
@@ -176,17 +221,10 @@ class TranslatedLayoutField extends LayoutField {
         $defaultLangLayouts = Layouts::factory($defaultLangValue, ['parent' => $this->model])->toArray();
 
         // Start sanitizing / Syncing the structure
-        // Note: the functions used in these functions might throw errors in some rare setups
-        try{
-            $defaultLangLayouts = static::indexesToKeys($defaultLangLayouts);
-            $layouts = static::indexesToKeys($layouts);
-        } catch(Throwable $e){
-            //if(false) dump('Error somewhere syncing langs : '.$e->getCode().': '.$e->getMessage().' - Line='.$e->getLine().' - File='.$e->getFile()); die();
-            return; // <-- todo, this really should not return as it leaves the translation unsynchronized.
-        }
 
         // Loop the default language's structure and let translation content replace it
         foreach ($defaultLangLayouts as $layoutIndex => $layout) { // <-- Apply blockstovalues
+            $layoutID = $layout['id']??$layoutIndex;
 
             // Check the layout settings / attrs
             if ($this->settings !== null) { // 
@@ -198,16 +236,16 @@ class TranslatedLayoutField extends LayoutField {
 
                 // Check for translations
                 $attrFields = $attrForm->fields();
-                if( $attrFields->count() > 0 && isset($layouts[$layoutIndex]) && array_key_exists('attrs', $layouts[$layoutIndex]) ){
-                    $translatedAttrs = $this->attrsForm($layouts[$layoutIndex]['attrs'])->values();
+                if( $attrFields->count() > 0 && isset($value['layouts'][$layoutID]) && array_key_exists('attrs', $value['layouts'][$layoutID]) ){
+
                     // Loop default attrs by field
                     foreach($attrFields as $fieldName => $attrField){
                         // Translate if needed
                         if(
                             $attrField->translate() === true // the field translates
-                            && isset($layouts[$layoutIndex]['attrs'][$fieldName]) // The translation exists
+                            && isset($value['layouts'][$layoutID]['attrs'][$fieldName]) // The translation exists
                         ){
-                            $defaultLangLayouts[$layoutIndex]['attrs'][$fieldName] = $layouts[$layoutIndex]['attrs'][$fieldName];
+                            $defaultLangLayouts[$layoutIndex]['attrs'][$fieldName] = $value['layouts'][$layoutID]['attrs'][$fieldName];
                             // Todo : What if translation is empty ?
                             // !V::empty($layouts[$layoutIndex]['attrs'][$attrIndex])
 
@@ -218,10 +256,11 @@ class TranslatedLayoutField extends LayoutField {
             }
 
             foreach($layout['columns'] as $columnIndex => $column) {
+                $columnID = $column['id']??$columnIndex;
 
                 // Loop blocks and restrict them to the default language
                 foreach( $column['blocks'] as $blockIndex => $block){
-
+                    $blockID = $block['id']??$blockIndex;
                     // Note: If code breaks: Useful inspiration for syncing translations --> ModelWithContent.php [in function content()] :
 
                     // Get blueprint block attribtes
@@ -230,8 +269,7 @@ class TranslatedLayoutField extends LayoutField {
                     $translateByDefault = true; // todo: parse this from a plugin option ?
 
                     // Translateable and translation available ?
-                    if(($blockBlueprint->translate() || $translateByDefault) && isset($layouts[$layoutIndex]['columns'][$columnIndex]['blocks']) && array_key_exists($blockIndex, $layouts[$layoutIndex]['columns'][$columnIndex]['blocks'])){
-
+                    if(($blockBlueprint->translate() || $translateByDefault) && array_key_exists($blockID, $value['blocks'])){
                         // Loop blueprint fields here (not defaultLanguage values) to enable translations not in the default lang
                         //foreach($defaultLangLayouts[$layoutIndex]['columns'][$columnIndex]['blocks'][$blockIndex]['content'] as $fieldName => $fieldData){
                         foreach($blockBlueprint->fields() as $fieldName => $fieldOptions){
@@ -243,14 +281,14 @@ class TranslatedLayoutField extends LayoutField {
 
                                 // Got keys in both contentTranslations ?
                                 && array_key_exists($fieldName, $defaultLangLayouts[$layoutIndex]['columns'][$columnIndex]['blocks'][$blockIndex]['content'])
-                                && array_key_exists($fieldName,            $layouts[$layoutIndex]['columns'][$columnIndex]['blocks'][$blockIndex]['content'])
+                                && array_key_exists($fieldName,                                                     $value['blocks'][$blockID   ]['content'])
                                 // todo: add empty condition on translation ? This brobably should take a blueprint option if translateing empty values. Leaving translations empty can also be useful
                                 //&& !V::empty($layouts[$layoutIndex]['columns'][$columnIndex]['blocks'][$blockIndex]['content'])
                             ){
                                 //dump('Got a translation !='.$block['type'].'/'.$fieldName);
                                 
                                 // Replace the default lang block content with the translated one.
-                                $defaultLangLayouts[$layoutIndex]['columns'][$columnIndex]['blocks'][$blockIndex]['content'][$fieldName]=$layouts[$layoutIndex]['columns'][$columnIndex]['blocks'][$blockIndex]['content'][$fieldName];
+                                $defaultLangLayouts[$layoutIndex]['columns'][$columnIndex]['blocks'][$blockIndex]['content'][$fieldName]=$value['blocks'][$blockID]['content'][$fieldName];
 
                             }
                             // Todo : Handle nested fields in a field ? ? ? (structure, etc...)
