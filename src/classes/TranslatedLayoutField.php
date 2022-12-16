@@ -51,53 +51,62 @@ class TranslatedLayoutField extends LayoutField {
 		return 'translatedlayout';
 	}
 
-    // Replaces numbered indexes by a string from item[$key].
-    public static function indexesToKeys(array $array, string $key='id'): array {
-        $ret = [];
-        foreach ($array as $layoutKey => $layoutValue) {
-            $layoutKey = $layoutValue['id']??$layoutKey;
-            $ret[$layoutKey]=$layoutValue;
+    // public function props() : array { // from/in-sync-with the blueprint
+    //     return array_merge(parent::props(), [
+	// 		//'empty'          => $this->empty(),
+    //         //'translate' => false,
+    //         //'disabled' => true, // Disabled state for the layouts field, disables adding/removing layouts. BUT disables all contained blocks too. Needs to be modified within the field component.
+    //         //'type' => 'translatedlayout', // dunno why, php sets it to translatedLayout....
+	// 	]);
+    // }
 
-            if(array_key_exists('columns', $ret[$layoutKey])){
-                foreach ($ret[$layoutKey]['columns'] as $columnKey => $columnValue) {
-                    unset($ret[$layoutKey]['columns'][$columnKey]);
-                    $columnKey = $columnValue['id']??$columnKey;
-                    $ret[$layoutKey]['columns'][$columnKey]=$columnValue;
+    // // Replaces numbered indexes by a string from item[$key].
+    // public static function indexesToKeys(array $array, string $key='id'): array {
+    //     $ret = [];
+    //     foreach ($array as $layoutKey => $layoutValue) {
+    //         $layoutKey = $layoutValue['id']??$layoutKey;
+    //         $ret[$layoutKey]=$layoutValue;
 
-                    if(array_key_exists('blocks', $ret[$layoutKey]['columns'][$columnKey])){
-                        foreach ($ret[$layoutKey]['columns'][$columnKey]['blocks'] as $blockKey => $blockValue) {
-                            unset($ret[$layoutKey]['columns'][$columnKey]['blocks'][$blockKey]);
-                            $blockKey = $blockValue['id']??$blockKey;
-                            $ret[$layoutKey]['columns'][$columnKey]['blocks'][$blockKey]=$blockValue;
-                        }
-                    }
-                }
-            }
-        }
-        return $ret;
-    }
+    //         if(array_key_exists('columns', $ret[$layoutKey])){
+    //             foreach ($ret[$layoutKey]['columns'] as $columnKey => $columnValue) {
+    //                 unset($ret[$layoutKey]['columns'][$columnKey]);
+    //                 $columnKey = $columnValue['id']??$columnKey;
+    //                 $ret[$layoutKey]['columns'][$columnKey]=$columnValue;
 
-    // Replaces named keys to numbered indexes.
-    public static function keysToIndexes(array $array, string $key='id'): array {
+    //                 if(array_key_exists('blocks', $ret[$layoutKey]['columns'][$columnKey])){
+    //                     foreach ($ret[$layoutKey]['columns'][$columnKey]['blocks'] as $blockKey => $blockValue) {
+    //                         unset($ret[$layoutKey]['columns'][$columnKey]['blocks'][$blockKey]);
+    //                         $blockKey = $blockValue['id']??$blockKey;
+    //                         $ret[$layoutKey]['columns'][$columnKey]['blocks'][$blockKey]=$blockValue;
+    //                     }
+    //                 }
+    //             }
+    //         }
+    //     }
+    //     return $ret;
+    // }
 
-        foreach ($array as $layoutKey => $layoutValue) {
-            //$array[$layoutKey][$key]=$layoutKey; // Sync key with id
-            if(array_key_exists('columns', $array[$layoutKey])){
-                foreach ($array[$layoutKey]['columns'] as $columnKey => $columnValue) {
-                    //$array[$layoutKey]['columns'][$columnKey][$key]=$columnKey; // Sync key with id
-                    if(array_key_exists('blocks', $array[$layoutKey]['columns'][$columnKey])){
-                        foreach ($array[$layoutKey]['columns'][$columnKey]['blocks'] as $blockKey => $blockValue) {
-                            //$array[$layoutKey]['columns'][$columnKey]['blocks'][$blockKey][$key]=$blockKey; // Sync key with id
-                        }
-                        $array[$layoutKey]['columns'][$columnKey]['blocks'] = array_values($array[$layoutKey]['columns'][$columnKey]['blocks']); // remove blocks keys
-                    }
-                }
-                $array[$layoutKey]['columns'] = array_values($array[$layoutKey]['columns']); // remove columns keys
-            }
-        }
-        $array = array_values($array); // remove keys on level 1
-        return $array;
-    }
+    // // Replaces named keys to numbered indexes.
+    // public static function keysToIndexes(array $array, string $key='id'): array {
+
+    //     foreach ($array as $layoutKey => $layoutValue) {
+    //         //$array[$layoutKey][$key]=$layoutKey; // Sync key with id
+    //         if(array_key_exists('columns', $array[$layoutKey])){
+    //             foreach ($array[$layoutKey]['columns'] as $columnKey => $columnValue) {
+    //                 //$array[$layoutKey]['columns'][$columnKey][$key]=$columnKey; // Sync key with id
+    //                 if(array_key_exists('blocks', $array[$layoutKey]['columns'][$columnKey])){
+    //                     foreach ($array[$layoutKey]['columns'][$columnKey]['blocks'] as $blockKey => $blockValue) {
+    //                         //$array[$layoutKey]['columns'][$columnKey]['blocks'][$blockKey][$key]=$blockKey; // Sync key with id
+    //                     }
+    //                     $array[$layoutKey]['columns'][$columnKey]['blocks'] = array_values($array[$layoutKey]['columns'][$columnKey]['blocks']); // remove blocks keys
+    //                 }
+    //             }
+    //             $array[$layoutKey]['columns'] = array_values($array[$layoutKey]['columns']); // remove columns keys
+    //         }
+    //     }
+    //     $array = array_values($array); // remove keys on level 1
+    //     return $array;
+    // }
 
     public function store($value){ // Returns the (array) value to store (string). The value has been fill()ed already.
         return parent::store($value);
@@ -223,7 +232,7 @@ class TranslatedLayoutField extends LayoutField {
         // Start sanitizing / Syncing the structure
 
         // Loop the default language's structure and let translation content replace it
-        foreach ($defaultLangLayouts as $layoutIndex => $layout) { // <-- Apply blockstovalues
+        foreach ($defaultLangLayouts as $layoutIndex => &$layout) { // <-- Apply blockstovalues
             $layoutID = $layout['id']??$layoutIndex;
 
             // Check the layout settings / attrs
@@ -232,7 +241,7 @@ class TranslatedLayoutField extends LayoutField {
                 $attrForm = $this->attrsForm($layout['attrs']);
 
                 // Load value from default lang
-                $defaultLangLayouts[$layoutIndex]['attrs'] = $attrForm->values();
+                $layout['attrs'] = $attrForm->values();
 
                 // Check for translations
                 $attrFields = $attrForm->fields();
@@ -245,7 +254,7 @@ class TranslatedLayoutField extends LayoutField {
                             $attrField->translate() === true // the field translates
                             && isset($value['layouts'][$layoutID]['attrs'][$fieldName]) // The translation exists
                         ){
-                            $defaultLangLayouts[$layoutIndex]['attrs'][$fieldName] = $value['layouts'][$layoutID]['attrs'][$fieldName];
+                            $layout['attrs'][$fieldName] = $value['layouts'][$layoutID]['attrs'][$fieldName];
                             // Todo : What if translation is empty ?
                             // !V::empty($layouts[$layoutIndex]['attrs'][$attrIndex])
 
@@ -255,11 +264,11 @@ class TranslatedLayoutField extends LayoutField {
                 }
             }
 
-            foreach($layout['columns'] as $columnIndex => $column) {
+            foreach($layout['columns'] as $columnIndex => &$column) {
                 $columnID = $column['id']??$columnIndex;
 
                 // Loop blocks and restrict them to the default language
-                foreach( $column['blocks'] as $blockIndex => $block){
+                foreach( $column['blocks'] as $blockIndex => &$block){
                     $blockID = $block['id']??$blockIndex;
                     // Note: If code breaks: Useful inspiration for syncing translations --> ModelWithContent.php [in function content()] :
 
@@ -280,15 +289,15 @@ class TranslatedLayoutField extends LayoutField {
                                 $translateField
 
                                 // Got keys in both contentTranslations ?
-                                && array_key_exists($fieldName, $defaultLangLayouts[$layoutIndex]['columns'][$columnIndex]['blocks'][$blockIndex]['content'])
-                                && array_key_exists($fieldName,                                                     $value['blocks'][$blockID   ]['content'])
+                                && array_key_exists($fieldName, $block['content'])
+                                && array_key_exists($fieldName, $value['blocks'][$blockID]['content'])
                                 // todo: add empty condition on translation ? This brobably should take a blueprint option if translateing empty values. Leaving translations empty can also be useful
                                 //&& !V::empty($layouts[$layoutIndex]['columns'][$columnIndex]['blocks'][$blockIndex]['content'])
                             ){
                                 //dump('Got a translation !='.$block['type'].'/'.$fieldName);
                                 
                                 // Replace the default lang block content with the translated one.
-                                $defaultLangLayouts[$layoutIndex]['columns'][$columnIndex]['blocks'][$blockIndex]['content'][$fieldName]=$value['blocks'][$blockID]['content'][$fieldName];
+                                $block['content'][$fieldName]=$value['blocks'][$blockID]['content'][$fieldName];
 
                             }
                             // Todo : Handle nested fields in a field ? ? ? (structure, etc...)
@@ -305,7 +314,7 @@ class TranslatedLayoutField extends LayoutField {
 
                 // Compute simplified blueprint to fully expanded options (like original Kirby fill() function)
                 //$defaultLangLayouts[$layoutIndex]['columns'][$columnIndex]['blocks'] = $this->blocksToValues(array_merge($defaultLangLayouts[$layoutIndex]['columns'][$columnIndex]['blocks'], $layouts[$layoutIndex]['columns'][$columnIndex]['blocks']));
-                $defaultLangLayouts[$layoutIndex]['columns'][$columnIndex]['blocks'] = $this->blocksToValues($defaultLangLayouts[$layoutIndex]['columns'][$columnIndex]['blocks']);
+                $column['blocks'] = $this->blocksToValues($column['blocks']);
 
                 // lazy-update/replace ? whole blocks part ? Too buggy in case items get add/removed; only works well when data is a perfect mirror. Also, array_combine tends to be quite slow.
                 //$layouts[$layoutIndex]['columns'][$columnIndex]['blocks'] = array_combine($defaultLangLayouts[$layoutIndex]['columns'][$columnIndex]['blocks'], array_slice($layouts[$layoutIndex]['columns'][$columnIndex]['blocks']);
@@ -314,7 +323,7 @@ class TranslatedLayoutField extends LayoutField {
         }
 
         // Reset keys
-        $defaultLangLayouts = static::keysToIndexes($defaultLangLayouts);
+        //$defaultLangLayouts = static::keysToIndexes($defaultLangLayouts);
 
         // Remember value
         $this->value = $defaultLangLayouts;
