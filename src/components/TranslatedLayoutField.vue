@@ -26,22 +26,16 @@
 // - So we need to replace 3 templates just to introduce a new prop, and keep them up to date
 
 import TranslatedBlockLayouts from "~/components/TranslatedLayouterLayouts.vue"
+import TranslatedLayoutMixin  from "~/components/TranslatedLayoutMixin.js";
 
 export default {
-  extends: 'k-layout-field',
-  components: {
-    'k-translated-block-layouts' : TranslatedBlockLayouts,
-  },
-  computed: {
-    // Editing is only allowed in the default language
-    layoutEditingIsDisabled() {
-      // Note: on single lang installations, $language is null --> always allow editing layouts
-      if(!this.$root.$language) return false;
-
-      return !this.$root.$language.default;
-      //return window.panel.$language.default;
+    extends: 'k-layout-field',
+    components: {
+        'k-translated-block-layouts' : TranslatedBlockLayouts,
     },
-  }
+    mixins: [
+        TranslatedLayoutMixin,
+    ],
 };
 </script>
 
