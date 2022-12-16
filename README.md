@@ -1,20 +1,22 @@
 # Kirby TranslatedLayout field plugin
-
-A layout field that forces translations to have an identical structure to the one of the default language.
+A layout and blocks field with translation logics for Kirby 3.  
+Both fields parse the structure from the default lang then replace translations within manually.  
+Structure editing is disabled in secondary languages.
 
 ### Beta
 This is an experimental draft for trying to bring some translation logic to blocks, columns and layouts.  
 It turns out to be quite powerful already with just a minimal set of changes compared to the native field behaviour.
-Before moving on to more configuration options, I'd like to ensure the base code is robust. If you encounter any bug, please fill an issue.
+**Current state** : Before moving on to more configuration options, I'd like to ensure the base code is robust. If you encounter any bug, please fill an issue.
 
 
 ### Implementation
- - *Seconday language* translations of this field are always syncronized (on parse aka `$field->fill($value)`) with layouts and blocks from the default language using their unique `id`.
+ - The **primary language** inherits the default LayoutField behaviour and remains *(almost?)* identical to the native Kirby Layout field.
+ - The **seconday language** translations of this field are always syncronized (on parse aka `$field->fill($value)`) with layouts and blocks from the default language using their unique `id`.
     - **Fallback** : If a block has no translation, it's replaced with the default language.
-    - **Sanitation** : If a block translation is not available in the default language, it's removed. All blocks from the default language are guaranteed to be available in translations.
+    - **Sanitation** : If a block translation is not available in the default language, it's removed. All blocks from the default language are guaranteed to be available for translation in the panel.
     - **Panel GUI** : Non-translateable fields and blocks are disabled, preventing panel users from changing the layout and adding blocks in translations.
-    - **Parse** : The syncronized translation is saved as a regular layout in the content file and works fine with the native `$field->toLayout()`.
- - The **primary language** inherits the default LayoutField behaviour and remains (almost?) identical to the native Kirby Layout field.
+    - **Parse** : The syncronized translation is saved as a blocks collection and works fine with the native `$field->toLayout()` & `$field->toBlocks()`.
+
 
 ![Screenshot of Kirby 3 plugins TranslatedLayout](TranslatedLayout.gif)
 
@@ -53,8 +55,8 @@ sections:
   content:
     type: fields
     fields:
-      layout:
-        label: TranslatedLayout Demo
+      mylayout:
+        label: Translated Layout Demo
         type: translatedlayout
         translate: true # <--- enables syncing of translations (layout field)
         layouts:
@@ -110,6 +112,18 @@ sections:
             purpose:
               type: text
               translate: true  # Translate
+      myblock:
+        layout:
+          label: Translated Blocks Demo
+          type: translatedblocks
+          fieldsets:
+              heading:
+                extends: blocks/heading
+                translate: true # same as default value
+              - text
+              line:
+                extends: blocks/line
+                translate: false # Completely disable whole block translations
 ````
 
 To use predefined translation settings for the default kirby blocks, you may use :  

@@ -18,15 +18,18 @@ use \Kirby\Exception\LogicException;
 //      - Provide an option not to save non-translateable duplicate content in the content file.
 //      - 
 // - Facilitate blueprint setup by providing a way to automatically inject `translate: true|false` to blocks and their fieldset fields.
-// - Port the layouts logic to columns and blocks.
+// - Check if all fieldsets are modified. (There are fieldset api routes also)
+// - Ensure that `fill()` called on panel.save throws are notified to user instead of erasing the translation without any notice.
 // - Miscellaneous improvements :
 //      - Double check error handling behaviour
 //      - Performance checks
 //      - Test suite
 
+require_once( __DIR__ . '/TranslatedBlockTraits.php');
+
 // Class for extending the default layout field to have translateable content with layout structure sync
 class TranslatedLayoutField extends LayoutField {
-    
+    use TranslatedBlocksTraits;
 
     public function __construct(array $params = []){
         parent::__construct($params);
@@ -273,7 +276,7 @@ class TranslatedLayoutField extends LayoutField {
                     // Note: If code breaks: Useful inspiration for syncing translations --> ModelWithContent.php [in function content()] :
 
                     // Get blueprint block attribtes
-                    $blockBlueprint = $this->fieldset($block['type']);
+                    $blockBlueprint = $this->fieldset($block['type']); // Todo: fieldset can throw !
 
                     $translateByDefault = true; // todo: parse this from a plugin option ?
 
@@ -281,7 +284,7 @@ class TranslatedLayoutField extends LayoutField {
                     if(($blockBlueprint->translate() || $translateByDefault) && array_key_exists($blockID, $value['blocks'])){
                         // Loop blueprint fields here (not defaultLanguage values) to enable translations not in the default lang
                         //foreach($defaultLangLayouts[$layoutIndex]['columns'][$columnIndex]['blocks'][$blockIndex]['content'] as $fieldName => $fieldData){
-                        foreach($blockBlueprint->fields() as $fieldName => $fieldOptions){
+                        foreach($blockBlueprint->fields() as $fieldName => $fieldOptions){ // Todo: fields() can throw !
                             // Translate if field's translation is explicitly set or if the block is set to translate
                             $translateField = array_key_exists('translate', $fieldOptions) ? ($fieldOptions['translate'] === true) : ($translateByDefault && $blockBlueprint->translate());
                             if(
@@ -329,22 +332,6 @@ class TranslatedLayoutField extends LayoutField {
         $this->value = $defaultLangLayouts;
     }
 
-    // Override fieldsets for translations. Fieldsets define block blueprints, which allow controlling their translation status.
-    protected function setFieldsets($fieldsets, $model) {
-        // On default lang, use native kirby function, sure not to break.
-        if($this->kirby()->language()->isDefault()) return parent::setFieldsets($fieldsets, $model);// added this line compared to native
-
-		if (is_string($fieldsets) === true) {
-			$fieldsets = [];
-		}
-
-        $fieldsets = $this->adaptFieldsetsToTranslation($fieldsets);// added this line compared to native
-
-		$this->fieldsets = Fieldsets::factory($fieldsets, [
-			'parent' => $model
-		]);
-	}
-
     // Override the layout settings blueprint, 
     protected function setSettings($settings = null) {
         // On default lang, use native kirby function, sure not to break.
@@ -367,27 +354,6 @@ class TranslatedLayoutField extends LayoutField {
 
 		$this->settings = Fieldset::factory($settings);
 	}
-
-    // Adds translation statuses to all fields and modifies them according to blueprint.
-    private static function adaptFieldsetsToTranslation(array $fieldsets) : array {
-        foreach($fieldsets as $key => $fieldset){
-            $fieldsets[$key] = static::adaptFieldsetToTranslation($fieldset);
-        }
-        return $fieldsets;
-    }
-
-    private static function adaptFieldsetToTranslation(array $fieldset) : array {
-        // Set translations ?
-        // Already set via blueprint YML ? if using: "extends: translatedlayoutwithfields" ? Ensure to set defaults ?
-
-        // Set disabed ? Saveable ? if translate is false. So the field is disabled for editing in panel
-        if(isset($fieldset['translate']) && $fieldset['translate'] === false ){
-            $fieldset['disabled']=true;
-            //$fieldset['saveable']=false; // Assumes the field has no value ! Not possible
-        }
-
-        return $fieldset;
-    }
 
     // Try to override these ModelWithContent methods
     //public function translation(string $languageCode = null) { return $this->parent->translation($languageCode); }
