@@ -130,7 +130,7 @@ export default {
 		},
 		// Never add blocks
 		async addCustom(type = "text", index){
-			return this.layoutEditingIsDisabled ? null : this.addNative(type = "text", index);
+			return this.layoutEditingIsDisabled ? null : this.addNative(type, index);
 		},
 		// Never removeAll
 		removeAllCustom(){
