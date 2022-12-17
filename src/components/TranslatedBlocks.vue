@@ -21,7 +21,7 @@ export default {
 		_devInfo: {
 			// Vue-Dev-info, to clarify that this is not the original, for devs debugging with the inspector.
 			type: String,
-			default: "Warning: I'm not the default k-blocks.\n I have been replaced by a k-translated-blocks !",
+			default: "Warning: I'm not the default k-blocks. I have been replaced by a k-translated-blocks !",
 		},
 	},
 	mounted(){
