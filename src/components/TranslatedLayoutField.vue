@@ -60,7 +60,7 @@ export default {
           }
         }
 
-        &:has(.k-icon-edit){ // CSS4 not supported by most browsers...
+        &:has(.k-icon-edit){ // CSS4 not supported by most browsers... but language-universal
           display: none;
         }
       }

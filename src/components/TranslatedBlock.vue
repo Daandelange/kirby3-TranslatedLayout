@@ -96,14 +96,20 @@
 import TranslatedLayoutMixin from "~/components/TranslatedLayoutMixin.js";
 
 // Compared to the native component :
-// - Options menu is hidden in translations
-// TODO : Gui has been disabled, but copy/paste and some other actions might still work (batch, etc...)
+// - Options menu is hidden in translations. Note: if this is the only change needed, could be done via css + over-riding the k-block-options component for making that easier.
 
 export default {
 	extends: 'k-block',
 	mixins: [
         TranslatedLayoutMixin,
     ],
+	props: {
+		_devInfo: {
+			// Vue-Dev-info, to clarify that this is not the original, for devs debugging with the inspector.
+			type: String,
+			default: "Warning: I'm not the default k-block.\n I have been replaced by a k-translated-block !",
+		},
+	}
 };
 </script>
 

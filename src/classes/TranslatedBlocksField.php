@@ -140,4 +140,38 @@ class TranslatedBlocksField extends BlocksField {
         $this->value = $defaultLangBlocks;
     }
 
+    // Override parent routes to intercept pastes
+    public function routes(): array {
+		$field = $this;
+        $parentRoutes = parent::routes();
+        foreach($parentRoutes as $key => &$route){
+            if($route['pattern']==='paste'){
+                $prevAction = $route['action'];
+                $route['action'] = function () use ($field, $prevAction) {
+                    // Simply disable pasting blocks in translations.
+                    if($this->kirby()->language()->isDefault()){
+                        try{
+                            $newBlocks = $prevAction->call($this, $field);
+                        }
+                        catch(Throwable $e){
+                            throw new Exception('Could not call native route action : '.$e->getMessage());
+                        }
+
+                        foreach($newBlocks as $index => &$newBlock){
+                            $pastedBlockUuid = $newBlock['id'];
+                            // If the same is returned, the panel will generate a new one which will break translations sync
+                            // Wrong : The panel always generates a new UUID !
+                            $newBlock['id'] = Str::uuid();
+                            // Todo : Use $pastedBlockUuid to duplicate it in translations so the paste applies to all langs.
+                        }
+                        
+                        return $newBlocks;
+                    }
+                    else throw new Exception('Pasting has been disabled in translations, but could be implemented !');
+                };
+            }
+            // todo: modify fieldset api route too
+        }
+		return $parentRoutes;
+	}
 }

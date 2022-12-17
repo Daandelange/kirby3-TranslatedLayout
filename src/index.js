@@ -1,15 +1,17 @@
 
 import TranslatedLayoutField from "~/components/TranslatedLayoutField.vue";
 import TranslatedBlocksField from "~/components/TranslatedBlocksField.vue";
-//import TranslatedBlocks from      "~/components/TranslatedBlocks.vue";
+import TranslatedBlocks from      "~/components/TranslatedBlocks.vue";
 import TranslatedBlock from       "~/components/TranslatedBlock.vue";
 //import TranslatedLayout from "~/components/TranslatedLayouterLayout.vue"
 
 panel.plugin("daandelange/translatedlayout", {
   components: {
     //'k-layout' : TranslatedLayout, // Not possible, locally-registered component, not globally
-    //'k-blocks' : TranslatedBlocks,// Override globally registered k-blocks
+    // Important note: There's some kind of recursion replacing the plugin that loads another replaced plugin. First over-ride the child, then the parent container !
     'k-block'  : TranslatedBlock, // Override globally registered k-block
+    'k-blocks' : TranslatedBlocks,// Override globally registered k-blocks
+    
   },
 
   fields: {
