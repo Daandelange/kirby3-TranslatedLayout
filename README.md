@@ -113,17 +113,16 @@ sections:
               type: text
               translate: true  # Translate
       myblock:
-        layout:
-          label: Translated Blocks Demo
-          type: translatedblocks
-          fieldsets:
-              heading:
-                extends: blocks/heading
-                translate: true # same as default value
-              - text
-              line:
-                extends: blocks/line
-                translate: false # Completely disable whole block translations
+        label: Translated Blocks Demo
+        type: translatedblocks
+        fieldsets:
+            heading:
+              extends: blocks/heading
+              translate: true # same as default value
+            - text
+            line:
+              extends: blocks/line
+              translate: false # Completely disable whole block translations
 ````
 
 To use predefined translation settings for the default kirby blocks, you may use :  
