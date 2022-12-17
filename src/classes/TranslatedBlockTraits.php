@@ -7,43 +7,40 @@ use \Kirby\Cms\Fieldsets;
 // Shared traits for TranslatedBlocksField and TranslatedLayoutField
 trait TranslatedBlocksTraits {
 
-    // Override the layout settings blueprint, 
-    protected function setSettings($settings = null) {
+    // Override fieldsets for translations. Fieldsets define block blueprints, which allow controlling their translation status.
+    protected function setFieldsets($fieldsets, $model) {
+
         // On default lang, use native kirby function, sure not to break.
-        if($this->kirby()->language()->isDefault()) return parent::setSettings($settings);// added this line compared to native
+        if($model->kirby()->language()->isDefault()) return parent::setFieldsets($fieldsets, $model);// added this line compared to native
 
-		if (empty($settings) === true) {
-			$this->settings = null;
-			return;
-		}
+        if (is_string($fieldsets) === true) {
+            $fieldsets = [];
+        }
 
-		$settings = Blueprint::extend($settings);
-		$settings['icon']   = 'dashboard';
-		$settings['type']   = 'layout';
-		$settings['parent'] = $this->model();
+        $fieldsets = $this->adaptFieldsetsToTranslation($fieldsets);// added this line compared to native
 
-        // Lines below were added compared to native function
-        $settings = $this->adaptFieldsetToTranslation($settings);
-        //$settings['disabled'] = true;
-        //$settings['editable'] = false; // Adding this line disables saving of attrs/settings ?
-
-		$this->settings = Fieldset::factory($settings);
-	}
+        // Todo : if fieldsets is null,  factory() seems to set it to a default set, causing disabled not to be set correctly...
+        $this->fieldsets = Fieldsets::factory($fieldsets, [
+            'parent' => $model
+        ]);
+    }    
 
     // Adds translation statuses to all fields and modifies them according to blueprint.
-    private static function adaptFieldsetsToTranslation(array $fieldsets) : array {
-        foreach($fieldsets as $key => $fieldset){
-            $fieldsets[$key] = static::adaptFieldsetToTranslation($fieldset);
+    private static function adaptFieldsetsToTranslation(?array $fieldsets) : ?array {
+        if($fieldsets) foreach($fieldsets as $key => &$fieldset){
+            $fieldset = static::adaptFieldsetToTranslation($fieldset);
+
+            // Todo: can it happen that groups contain more fieldsets ? They might need a dedicated if()...
         }
         return $fieldsets;
     }
 
-    private static function adaptFieldsetToTranslation(array $fieldset) : array {
+    private static function adaptFieldsetToTranslation(?array $fieldset) : ?array {
         // Set translations ?
         // Already set via blueprint YML ? if using: "extends: translatedlayoutwithfields" ? Ensure to set defaults ?
 
         // Set disabed ? Saveable ? if translate is false. So the field is disabled for editing in panel
-        if(isset($fieldset['translate']) && $fieldset['translate'] === false ){
+        if($fieldset && isset($fieldset['translate']) && $fieldset['translate'] === false ){
             $fieldset['disabled']=true;
             //$fieldset['saveable']=false; // Assumes the field has no value ! Not possible
         }
