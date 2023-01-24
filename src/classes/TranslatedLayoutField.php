@@ -212,7 +212,14 @@ class TranslatedLayoutField extends LayoutField {
             if( !isset($value['layouts']) || !isset($value['blocks']) )
                 throw new LogicException('The parsed string data looks wrong. Aborting.');
         }
-        // OPTION C : Huh? Is there an option C ?!
+        // Option C: The value is empty : start with fresh data
+        elseif( is_null($value) ){
+            $value = [
+                'layouts'   => [],
+                'blocks'    => [],
+            ];
+        }
+        // OPTION D : Huh? Is there an option D ?!
         else {
             throw new LogicException('Could not parse the layout value !');
         }
