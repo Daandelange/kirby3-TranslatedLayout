@@ -5,7 +5,7 @@ use \Kirby\Cms\Blueprint;
 use \Kirby\Cms\Fieldset;
 use \Kirby\Cms\Fieldsets;
 use \Kirby\Exception\LogicException;
-use Kirby\Cms\Blocks as BlocksCollection;
+use \Kirby\Cms\Blocks as BlocksCollection;
 
 require_once( __DIR__ . '/TranslatedBlockTraits.php');
 

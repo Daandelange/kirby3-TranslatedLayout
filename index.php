@@ -1,5 +1,5 @@
 <?php
-use Kirby\Form\Field\LayoutField; // maybe not needed ?
+use \Kirby\Form\Field\LayoutField; // maybe not needed ?
 
 require_once(__DIR__ . '/src/classes/TranslatedLayoutField.php');
 require_once(__DIR__ . '/src/classes/TranslatedBlocksField.php');
