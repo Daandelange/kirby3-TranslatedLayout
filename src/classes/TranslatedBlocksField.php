@@ -42,7 +42,7 @@ class TranslatedBlocksField extends BlocksField {
         if( !$blocks->isEmpty() ){
             foreach ($blocks->toArray() as $blockIndex => $block){
                 // We should have: $block.id , $block.content , $block.type, $block.isHidden
-                $keyB = $block['id']??$blockIndex;
+                $keyB = $block['id']??('block_'.$blockIndex);
                 if(isset($flatStructure[$keyB]))
                     throw new LogicException("Ouch, now unique IDs can exist twice ! I can't handle this."); // Todo: auto-incremment instead of throwing ? Will not fix translations syncing but can prevent losing block-translations in the content file for manual restore ?
                 

@@ -127,10 +127,12 @@ class TranslatedLayoutField extends LayoutField {
                         if( isset($column['blocks']) ){
                             foreach( $column['blocks'] as $blockIndex => $block){
                                 // We should have: $block.id , $block.content , $block.type, $block.isHidden
-                                $keyB = $block['id']??$blockIndex;
-                                if(isset($flatStructure['blocks'][$keyB]))
-                                    throw new LogicException("Ouch, now unique IDs can exist twice ! I can't handle this.");
-                                
+                                $keyB = $block['id']??('block_'.$layoutIndex.'_'.$columnIndex.'_'.$blockIndex);
+                                if(isset($flatStructure['blocks'][$keyB])) {
+                                    // In default lang, generate new ID if numerical OR
+                                    throw new LogicException("Ouch, now unique IDs can exist twice ! I can't handle this, please fix any duplicate ID in your content file. (duplicate block of type ".($block['type']??'Unknown')." with ID: ".$block['id'].").");
+                                }
+
                                 $flatStructure['blocks'][$keyB] = $block;
                             }
                             unset($column['blocks']);
@@ -140,7 +142,7 @@ class TranslatedLayoutField extends LayoutField {
                     }
                     unset($layout['columns']);
                 }
-                $keyL = $layout['id']??$layoutIndex;
+                $keyL = $layout['id']??('layout_'.$layoutIndex);
                 if(isset($flatStructure['blocks'][$keyL]))
                     throw new LogicException("Ouch, now unique IDs can exist twice ! I can't handle this.");
                 $flatStructure['layouts'][$keyL] = $layout; // Note: Attrs are simply copied within
