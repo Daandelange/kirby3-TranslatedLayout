@@ -207,7 +207,11 @@ class TranslatedLayoutField extends LayoutField {
             $value = $this->valueFromJson($value); // Ensures the value is an array
 
             // Convert from native translation storage format (copy-pasted or saved in pre v0.3.0 : data was stored like default lang, with the layouts and all)
-            if( isset($value[0]) && isset($value[0]['columns']) && isset($value[0]['id']) ){ // Value is same as when getting a panel save
+            if(
+                is_array($value) && ( // The data is an array
+                (count($value)==0) || // Empty array is valid too
+                (isset($value[0]) && isset($value[0]['columns']) && isset($value[0]['id'])) // Value is same as when getting a panel save
+            )){
                 $value = $this->flattenLayoutsColumnsBlocks( Layouts::factory($value, ['parent' => $this->model]) );
             }
             // Check values ?
