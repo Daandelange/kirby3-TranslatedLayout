@@ -149,6 +149,10 @@ There are no options available yet. Would you like to contribute some ?
 - `npm run dev` : Develop mode (listen/compile).
 - `npm run build` : Compile for publishing.
 
+
+## Similar Plugins
+- [Synced-Structure](https://gist.github.com/lukaskleinschmidt/1c0b94ffab51d650b7c7605a4d25c213) : Syncs structures across languages using UUIDs.
+
 ## License
 
 MIT - Free to use, free to improve !
